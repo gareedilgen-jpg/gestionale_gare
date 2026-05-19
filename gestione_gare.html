@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Lista Base Gare</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+            color: white;
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #ecf0f1;
+            border-right: 1px solid #ecf0f1;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        input[type="number"] {
+            text-align: right;
+        }
+
+        .delta-positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .delta-negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .delta-zero {
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .modal-header h2 {
+            color: #2c3e50;
+        }
+
+        .close-btn {
+            font-size: 28px;
+            font-weight: bold;
+            color: #95a5a6;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #e74c3c;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .analysis-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .analysis-card h3 {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .analysis-card .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stats-summary {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item label {
+            display: block;
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .stat-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .add-row-btn {
+            margin: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .chart-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #ecf0f1;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Gestione Lista Base Gare</h1>
+            <p>Importa, analizza e confronta le offerte per le tue gare d'appalto</p>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                📁 Importa Excel
+            </button>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv" onchange="importExcel(event)">
+            
+            <button class="btn btn-success" onclick="exportToExcel()">
+                💾 Esporta Excel
+            </button>
+            
+            <button class="btn btn-warning" onclick="addNewRow()">
+                ➕ Aggiungi Riga
+            </button>
+            
+            <button class="btn btn-danger" onclick="clearAll()">
+                🗑️ Pulisci Tutto
+            </button>
+            
+            <button class="btn btn-primary" onclick="showGeneralAnalysis()">
+                📈 Analisi Generale
+            </button>
+        </div>
+
+        <div class="stats-summary" id="statsSummary" style="display: none;">
+            <div class="stat-item">
+                <label>Totale Voci</label>
+                <div class="value" id="totalItems">0</div>
+            </div>
+            <div class="stat-item">
+                <label>Totale Prezzo Base</label>
+                <div class="value" id="totalBasePrice">€ 0.00</div>
+            </div>
+            <div class="stat-item">
+                <label>Totale Offerto</label>
+                <div class="value" id="totalOffered">€ 0.00</div>
+            </div>
+            <div class="stat-item">
+                <label>Delta Totale</label>
+                <div class="value" id="totalDelta">€ 0.00</div>
+            </div>
+            <div class="stat-item">
+                <label>Risparmio %</label>
+                <div class="value" id="savingPercent">0%</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="priceTable">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th style="width: 100px;">Codice</th>
+                        <th style="width: 100px;">Tariffa</th>
+                        <th>Descrizione</th>
+                        <th style="width: 100px;">U.M.</th>
+                        <th style="width: 100px;">Quantità</th>
+                        <th style="width: 120px;">Prezzo Unitario (€)</th>
+                        <th style="width: 120px;">Totale (€)</th>
+                        <th style="width: 120px;">Prezzo Offerto (€)</th>
+                        <th style="width: 120px;">Totale Offerto (€)</th>
+                        <th style="width: 100px;">Delta (€)</th>
+                        <th style="width: 80px;">Note</th>
+                        <th style="width: 80px;">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <button class="btn btn-primary add-row-btn" onclick="addNewRow()">
+            ➕ Aggiungi Nuova Riga
+        </button>
+    </div>
+
+    <!-- Modal per Analisi Singola Voce -->
+    <div id="analysisModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Analisi Voce</h2>
+                <span class="close-btn" onclick="closeModal('analysisModal')">&times;</span>
+            </div>
+            <div id="modalContent">
+                <div class="analysis-grid" id="analysisGrid"></div>
+                <div class="chart-container" id="chartContainer"></div>
+                <div style="margin-top: 20px;">
+                    <h3>Note della voce:</h3>
+                    <textarea id="voiceNotes" rows="4" placeholder="Inserisci note..."></textarea>
+                    <button class="btn btn-primary" style="margin-top: 10px;" onclick="saveNotes()">Salva Note</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal per Analisi Generale -->
+    <div id="generalAnalysisModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Analisi Generale della Gara</h2>
+                <span class="close-btn" onclick="closeModal('generalAnalysisModal')">&times;</span>
+            </div>
+            <div id="generalAnalysisContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let rowData = [];
+        let currentRowIndex = null;
+
+        // Inizializzazione
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFromLocalStorage();
+            if (rowData.length === 0) {
+                addNewRow();
+            }
+            updateStats();
+        });
+
+        // Aggiungi nuova riga
+        function addNewRow(data = {}) {
+            const rowIndex = rowData.length;
+            const newRow = {
+                codice: data.codice || '',
+                tariffa: data.tariffa || '',
+                descrizione: data.descrizione || '',
+                um: data.um || '',
+                quantita: data.quantita || 1,
+                prezzoUnitario: data.prezzoUnitario || 0,
+                totale: data.totale || 0,
+                prezzoOfferto: data.prezzoOfferto || 0,
+                totaleOfferto: data.totaleOfferto || 0,
+                delta: data.delta || 0,
+                note: data.note || ''
+            };
+            rowData.push(newRow);
+            renderTable();
+            saveToLocalStorage();
+        }
+
+        // Renderizza la tabella
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            rowData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                
+                // Calcola i totali
+                row.totale = row.quantita * row.prezzoUnitario;
+                row.totaleOfferto = row.quantita * row.prezzoOfferto;
+                row.delta = row.totale - row.totaleOfferto;
+
+                let deltaClass = 'delta-zero';
+                if (row.delta > 0) deltaClass = 'delta-positive';
+                else if (row.delta < 0) deltaClass = 'delta-negative';
+
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><input type="text" value="${row.codice}" onchange="updateRow(${index}, 'codice', this.value)"></td>
+                    <td><input type="text" value="${row.tariffa}" onchange="updateRow(${index}, 'tariffa', this.value)"></td>
+                    <td><input type="text" value="${row.descrizione}" onchange="updateRow(${index}, 'descrizione', this.value)"></td>
+                    <td><input type="text" value="${row.um}" onchange="updateRow(${index}, 'um', this.value)"></td>
+                    <td><input type="number" value="${row.quantita}" step="0.01" onchange="updateRow(${index}, 'quantita', parseFloat(this.value) || 0)"></td>
+                    <td><input type="number" value="${row.prezzoUnitario.toFixed(2)}" step="0.01" onchange="updateRow(${index}, 'prezzoUnitario', parseFloat(this.value) || 0)"></td>
+                    <td style="text-align: right; font-weight: bold;">€ ${row.totale.toFixed(2)}</td>
+                    <td><input type="number" value="${row.prezzoOfferto.toFixed(2)}" step="0.01" onchange="updateRow(${index}, 'prezzoOfferto', parseFloat(this.value) || 0)"></td>
+                    <td style="text-align: right; font-weight: bold;">€ ${row.totaleOfferto.toFixed(2)}</td>
+                    <td style="text-align: right;" class="${deltaClass}">€ ${row.delta.toFixed(2)}</td>
+                    <td><input type="text" value="${row.note}" onchange="updateRow(${index}, 'note', this.value)" placeholder="Note..."></td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;" onclick="analyzeVoice(${index})">📊</button>
+                        <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="deleteRow(${index})">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            updateStats();
+        }
+
+        // Aggiorna una riga
+        function updateRow(index, field, value) {
+            rowData[index][field] = value;
+            if (field === 'quantita' || field === 'prezzoUnitario' || field === 'prezzoOfferto') {
+                rowData[index].totale = rowData[index].quantita * rowData[index].prezzoUnitario;
+                rowData[index].totaleOfferto = rowData[index].quantita * rowData[index].prezzoOfferto;
+                rowData[index].delta = rowData[index].totale - rowData[index].totaleOfferto;
+            }
+            saveToLocalStorage();
+            renderTable();
+        }
+
+        // Elimina riga
+        function deleteRow(index) {
+            if (confirm('Sei sicuro di voler eliminare questa riga?')) {
+                rowData.splice(index, 1);
+                renderTable();
+                saveToLocalStorage();
+            }
+        }
+
+        // Pulisci tutto
+        function clearAll() {
+            if (confirm('Sei sicuro di voler cancellare tutti i dati?')) {
+                rowData = [];
+                addNewRow();
+                localStorage.removeItem('garaData');
+            }
+        }
+
+        // Importa Excel
+        function importExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                    // Salta l'intestazione
+                    rowData = [];
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row.length > 0) {
+                            const newRow = {
+                                codice: row[0] || '',
+                                tariffa: row[1] || '',
+                                descrizione: row[2] || '',
+                                um: row[3] || '',
+                                quantita: parseFloat(row[4]) || 1,
+                                prezzoUnitario: parseFloat(row[5]) || 0,
+                                totale: parseFloat(row[6]) || 0,
+                                prezzoOfferto: parseFloat(row[7]) || 0,
+                                totaleOfferto: parseFloat(row[8]) || 0,
+                                delta: parseFloat(row[9]) || 0,
+                                note: row[10] || ''
+                            };
+                            // Ricalcola i valori
+                            newRow.totale = newRow.quantita * newRow.prezzoUnitario;
+                            newRow.totaleOfferto = newRow.quantita * newRow.prezzoOfferto;
+                            newRow.delta = newRow.totale - newRow.totaleOfferto;
+                            rowData.push(newRow);
+                        }
+                    }
+
+                    renderTable();
+                    saveToLocalStorage();
+                    alert(`Importate ${rowData.length} righe con successo!`);
+                } catch (error) {
+                    alert('Errore durante l\'importazione del file Excel: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        // Esporta Excel
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            const exportData = [
+                ['Codice', 'Tariffa', 'Descrizione', 'U.M.', 'Quantità', 'Prezzo Unitario (€)', 'Totale (€)', 
+                 'Prezzo Offerto (€)', 'Totale Offerto (€)', 'Delta (€)', 'Note']
+            ];
+
+            rowData.forEach(row => {
+                exportData.push([
+                    row.codice,
+                    row.tariffa,
+                    row.descrizione,
+                    row.um,
+                    row.quantita,
+                    row.prezzoUnitario.toFixed(2),
+                    row.totale.toFixed(2),
+                    row.prezzoOfferto.toFixed(2),
+                    row.totaleOfferto.toFixed(2),
+                    row.delta.toFixed(2),
+                    row.note
+                ]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            XLSX.utils.book_append_sheet(wb, ws, 'Lista Base Gare');
+            XLSX.writeFile(wb, 'Lista_Base_Gare.xlsx');
+        }
+
+        // Analizza singola voce
+        function analyzeVoice(index) {
+            currentRowIndex = index;
+            const row = rowData[index];
+            
+            document.getElementById('modalTitle').textContent = `Analisi Voce #${index + 1} - ${row.descrizione.substring(0, 50)}${row.descrizione.length > 50 ? '...' : ''}`;
+            
+            const percentDifference = row.totale > 0 ? ((row.delta / row.totale) * 100) : 0;
+            const savingsPercent = row.prezzoUnitario > 0 ? (((row.prezzoUnitario - row.prezzoOfferto) / row.prezzoUnitario) * 100) : 0;
+
+            const analysisGrid = document.getElementById('analysisGrid');
+            analysisGrid.innerHTML = `
+                <div class="analysis-card" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                    <h3>Codice</h3>
+                    <div class="value">${row.codice || 'N/A'}</div>
+                </div>
+                <div class="analysis-card" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                    <h3>Tariffa</h3>
+                    <div class="value">${row.tariffa || 'N/A'}</div>
+                </div>
+                <div class="analysis-card" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                    <h3>Prezzo Base</h3>
+                    <div class="value">€ ${row.prezzoUnitario.toFixed(2)}</div>
+                </div>
+                <div class="analysis-card" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                    <h3>Prezzo Offerto</h3>
+                    <div class="value">€ ${row.prezzoOfferto.toFixed(2)}</div>
+                </div>
+                <div class="analysis-card" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                    <h3>Totale Base</h3>
+                    <div class="value">€ ${row.totale.toFixed(2)}</div>
+                </div>
+                <div class="analysis-card" style="background: linear-gradient(135deg, #1abc9c, #16a085);">
+                    <h3>Totale Offerto</h3>
+                    <div class="value">€ ${row.totaleOfferto.toFixed(2)}</div>
+                </div>
+                <div class="analysis-card" style="background: linear-gradient(135deg, ${row.delta >= 0 ? '#27ae60' : '#e74c3c'}, ${row.delta >= 0 ? '#229954' : '#c0392b'});">
+                    <h3>Delta</h3>
+                    <div class="value">€ ${row.delta.toFixed(2)}</div>
+                </div>
+                <div class="analysis-card" style="background: linear-gradient(135deg, #34495e, #2c3e50);">
+                    <h3>Risparmio %</h3>
+                    <div class="value">${savingsPercent.toFixed(2)}%</div>
+                </div>
+            `;
+
+            document.getElementById('voiceNotes').value = row.note || '';
+
+            // Barra di progresso
+            const chartContainer = document.getElementById('chartContainer');
+            const comparisonPercent = row.totale > 0 ? (row.totaleOfferto / row.totale * 100) : 0;
+            chartContainer.innerHTML = `
+                <h3>Confronto Prezzo Base vs Offerto</h3>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #3498db;">€ ${row.totale.toFixed(2)}</div>
+                        <div style="font-size: 12px; color: #7f8c8d;">Prezzo Base</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #27ae60;">€ ${row.totaleOfferto.toFixed(2)}</div>
+                        <div style="font-size: 12px; color: #7f8c8d;">Prezzo Offerto</div>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${Math.min(comparisonPercent, 100)}%;">
+                        ${comparisonPercent.toFixed(1)}%
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 10px; color: #7f8c8d;">
+                    ${row.delta >= 0 ? 'Risparmio' : 'Sovrapprezzo'} di € ${Math.abs(row.delta).toFixed(2)} (${Math.abs(percentDifference).toFixed(2)}%)
+                </p>
+            `;
+
+            document.getElementById('analysisModal').style.display = 'block';
+        }
+
+        // Salva note
+        function saveNotes() {
+            if (currentRowIndex !== null) {
+                const notes = document.getElementById('voiceNotes').value;
+                rowData[currentRowIndex].note = notes;
+                updateRow(currentRowIndex, 'note', notes);
+                alert('Note salvate con successo!');
+            }
+        }
+
+        // Mostra analisi generale
+        function showGeneralAnalysis() {
+            const totalBase = rowData.reduce((sum, row) => sum + row.totale, 0);
+            const totalOffered = rowData.reduce((sum, row) => sum + row.totaleOfferto, 0);
+            const totalDelta = totalBase - totalOffered;
+            const savingPercent = totalBase > 0 ? ((totalDelta / totalBase) * 100) : 0;
+
+            const positiveDeltas = rowData.filter(r => r.delta > 0).length;
+            const negativeDeltas = rowData.filter(r => r.delta < 0).length;
+            const zeroDeltas = rowData.filter(r => r.delta === 0).length;
+
+            const avgSaving = rowData.filter(r => r.prezzoUnitario > 0).reduce((sum, row) => {
+                return sum + (((row.prezzoUnitario - row.prezzoOfferto) / row.prezzoUnitario) * 100);
+            }, 0) / (rowData.filter(r => r.prezzoUnitario > 0).length || 1);
+
+            const content = document.getElementById('generalAnalysisContent');
+            content.innerHTML = `
+                <div class="analysis-grid">
+                    <div class="analysis-card" style="background: linear-gradient(135deg, #3498db, #2980b9);">
+                        <h3>Totale Voci</h3>
+                        <div class="value">${rowData.length}</div>
+                    </div>
+                    <div class="analysis-card" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                        <h3>Totale Prezzo Base</h3>
+                        <div class="value">€ ${totalBase.toFixed(2)}</div>
+                    </div>
+                    <div class="analysis-card" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                        <h3>Totale Offerto</h3>
+                        <div class="value">€ ${totalOffered.toFixed(2)}</div>
+                    </div>
+                    <div class="analysis-card" style="background: linear-gradient(135deg, ${totalDelta >= 0 ? '#27ae60' : '#e74c3c'}, ${totalDelta >= 0 ? '#229954' : '#c0392b'});">
+                        <h3>Delta Totale</h3>
+                        <div class="value">€ ${totalDelta.toFixed(2)}</div>
+                    </div>
+                    <div class="analysis-card" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                        <h3>Risparmio Complessivo</h3>
+                        <div class="value">${savingPercent.toFixed(2)}%</div>
+                    </div>
+                    <div class="analysis-card" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                        <h3>Risparmio Medio per Voce</h3>
+                        <div class="value">${avgSaving.toFixed(2)}%</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Distribuzione Delta</h3>
+                    <div style="display: flex; gap: 20px; margin-top: 20px; justify-content: center;">
+                        <div style="text-align: center;">
+                            <div style="width: 100px; height: 100px; background: #27ae60; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 0 auto;">
+                                ${positiveDeltas}
+                            </div>
+                            <p style="margin-top: 10px; font-weight: bold; color: #27ae60;">Voci in Risparmio</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="width: 100px; height: 100px; background: #e74c3c; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 0 auto;">
+                                ${negativeDeltas}
+                            </div>
+                            <p style="margin-top: 10px; font-weight: bold; color: #e74c3c;">Voci in Sovrapprezzo</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="width: 100px; height: 100px; background: #95a5a6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 0 auto;">
+                                ${zeroDeltas}
+                            </div>
+                            <p style="margin-top: 10px; font-weight: bold; color: #95a5a6;">Voci Invariate</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Progressivo Risparmio</h3>
+                    <div class="progress-bar" style="height: 50px;">
+                        <div class="progress-fill" style="width: ${Math.min(savingPercent, 100)}%; font-size: 16px;">
+                            ${savingPercent.toFixed(2)}% di risparmio complessivo
+                        </div>
+                    </div>
+                    <p style="text-align: center; margin-top: 15px; font-size: 16px;">
+                        Risparmio totale: <strong style="color: #27ae60;">€ ${totalDelta.toFixed(2)}</strong>
+                        su un totale base di <strong style="color: #e74c3c;">€ ${totalBase.toFixed(2)}</strong>
+                    </p>
+                </div>
+            `;
+
+            document.getElementById('generalAnalysisModal').style.display = 'block';
+        }
+
+        // Chiudi modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Aggiorna statistiche
+        function updateStats() {
+            const totalBase = rowData.reduce((sum, row) => sum + row.totale, 0);
+            const totalOffered = rowData.reduce((sum, row) => sum + row.totaleOfferto, 0);
+            const totalDelta = totalBase - totalOffered;
+            const savingPercent = totalBase > 0 ? ((totalDelta / totalBase) * 100) : 0;
+
+            document.getElementById('statsSummary').style.display = 'grid';
+            document.getElementById('totalItems').textContent = rowData.length;
+            document.getElementById('totalBasePrice').textContent = `€ ${totalBase.toFixed(2)}`;
+            document.getElementById('totalOffered').textContent = `€ ${totalOffered.toFixed(2)}`;
+            document.getElementById('totalDelta').textContent = `€ ${totalDelta.toFixed(2)}`;
+            document.getElementById('totalDelta').style.color = totalDelta >= 0 ? '#27ae60' : '#e74c3c';
+            document.getElementById('savingPercent').textContent = `${savingPercent.toFixed(2)}%`;
+        }
+
+        // Salva nel localStorage
+        function saveToLocalStorage() {
+            localStorage.setItem('garaData', JSON.stringify(rowData));
+        }
+
+        // Carica dal localStorage
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('garaData');
+            if (saved) {
+                try {
+                    rowData = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Errore nel caricamento dei dati salvati');
+                    rowData = [];
+                }
+            }
+        }
+
+        // Chiudi modal cliccando fuori
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
