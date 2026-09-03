@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Gare - Control Panel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --primary-hover: #1557b0;
+            --success-color: #188038;
+            --danger-color: #d93025;
+            --warning-color: #f29900;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --border-color: #dadce0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-hover: 0 3px 6px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.23);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--card-bg);
+            padding: 16px 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Google Sans', sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f1f3f4;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .stat-card.success {
+            border-left-color: var(--success-color);
+        }
+
+        .stat-card.warning {
+            border-left-color: var(--warning-color);
+        }
+
+        .stat-card.danger {
+            border-left-color: var(--danger-color);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Table */
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .table-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-title {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .delta-positive {
+            color: var(--success-color);
+            font-weight: 500;
+        }
+
+        .delta-negative {
+            color: var(--danger-color);
+            font-weight: 500;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            margin: 40px auto;
+            max-width: 1200px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-hover);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #f1f3f4;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        /* Analysis Panels */
+        .analysis-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Pyramid Structure */
+        .pyramid-container {
+            background: #fafbfc;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .pyramid-level {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .pyramid-level-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .level-1 {
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .level-2 {
+            border-top: 4px solid var(--success-color);
+        }
+
+        .level-3 {
+            border-top: 4px solid var(--warning-color);
+        }
+
+        .pyramid-title {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pyramid-total {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: 'Roboto', sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Labor Levels */
+        .labor-level {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .labor-level h4 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        /* Coefficients Section */
+        .coefficients-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 24px;
+        }
+
+        .coefficients-section h3 {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 16px;
+            margin-bottom: 16px;
+        }
+
+        .coefficient-mode {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .mode-option {
+            flex: 1;
+            padding: 16px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-option.active {
+            background: rgba(255,255,255,0.2);
+            border-color: white;
+        }
+
+        .mode-option h4 {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .mode-option p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .chart-title {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        /* Action Buttons in Table */
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-btn-analysis {
+            background: #e8f0fe;
+            color: var(--primary-color);
+        }
+
+        .action-btn-analysis:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .action-btn-delete {
+            background: #fce8e6;
+            color: var(--danger-color);
+        }
+
+        .action-btn-delete:hover {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        /* File Input */
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 1000px;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Summary Box */
+        .summary-box {
+            background: #e8f0fe;
+            border-left: 4px solid var(--primary-color);
+            padding: 16px;
+            border-radius: 4px;
+            margin-top: 16px;
+        }
+
+        .summary-box h4 {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .summary-value {
+            font-family: 'Google Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .add-btn {
+            background: #f1f3f4;
+            border: 2px dashed var(--border-color);
+            color: var(--text-secondary);
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .add-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: #e8f0fe;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>
+            <span class="material-icons">account_balance</span>
+            Gestione Gare - Control Panel
+        </h1>
+        <div class="header-actions">
+            <div class="file-input-wrapper">
+                <button class="btn btn-secondary">
+                    <span class="material-icons">upload_file</span>
+                    Importa Excel
+                </button>
+                <input type="file" id="excelImport" accept=".xlsx,.xls,.csv" />
+            </div>
+            <button class="btn btn-secondary" onclick="exportToExcel()">
+                <span class="material-icons">download</span>
+                Esporta Excel
+            </button>
+            <button class="btn btn-primary" onclick="openAnalysisModal()">
+                <span class="material-icons">analytics</span>
+                Analisi Generale
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Totale Voci</div>
+                <div class="stat-value" id="totalItems">0</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-label">Prezzo Base Totale</div>
+                <div class="stat-value" id="totalBasePrice">€ 0,00</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="stat-label">Prezzo Offerto Totale</div>
+                <div class="stat-value" id="totalOfferedPrice">€ 0,00</div>
+            </div>
+            <div class="stat-card danger">
+                <div class="stat-label">Delta Complessivo</div>
+                <div class="stat-value" id="totalDelta">€ 0,00</div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <h2 class="table-title">Elenco Prezzi Unitari</h2>
+                <button class="btn btn-primary" onclick="addNewVoice()">
+                    <span class="material-icons">add</span>
+                    Nuova Voce
+                </button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Codice</th>
+                        <th>Tariffa</th>
+                        <th>Descrizione</th>
+                        <th>U.M.</th>
+                        <th>Quantità</th>
+                        <th>Prezzo Unit. Base</th>
+                        <th>Totale Base</th>
+                        <th>Prezzo Unit. Offerto</th>
+                        <th>Totale Offerto</th>
+                        <th>Delta</th>
+                        <th>Note</th>
+                        <th>Azioni</th>
+                    </tr>
+                </thead>
+                <tbody id="priceTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Analysis Modal -->
+    <div class="modal" id="analysisModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Analisi Prezzo</h2>
+                <button class="close-btn" onclick="closeModal('analysisModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="analysis-tabs">
+                    <button class="tab-btn active" onclick="switchTab('pyramid')">Struttura Piramidale</button>
+                    <button class="tab-btn" onclick="switchTab('details')">Dettagli Voce</button>
+                    <button class="tab-btn" onclick="switchTab('charts')">Grafici</button>
+                </div>
+
+                <!-- Pyramid Tab -->
+                <div class="tab-content active" id="pyramidTab">
+                    <div class="pyramid-container">
+                        <!-- Level 1: Costi Diretti -->
+                        <div class="pyramid-level level-1">
+                            <div class="pyramid-level-header">
+                                <h3 class="pyramid-title">
+                                    <span class="material-icons">engineering</span>
+                                    1. COSTI DIRETTI
+                                </h3>
+                                <div class="pyramid-total" id="directCostsTotal">€ 0,00</div>
+                            </div>
+                            
+                            <!-- Manodopera -->
+                            <div class="form-group">
+                                <label style="font-weight: 600; color: var(--text-primary);">MANODOPERA</label>
+                                <div class="labor-level">
+                                    <h4>Operaio Comune</h4>
+                                    <div class="form-row">
+                                        <div>
+                                            <label>Ore per U.M.</label>
+                                            <input type="number" id="commonLaborHours" step="0.01" onchange="calculatePyramid()">
+                                        </div>
+                                        <div>
+                                            <label>Costo Orario (€)</label>
+                                            <input type="number" id="commonLaborCost" step="0.01" onchange="calculatePyramid()">
+                                        </div>
+                                        <div>
+                                            <label>Totale (€)</label>
+                                            <input type="number" id="commonLaborTotal" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="labor-level">
+                                    <h4>Operaio Qualificato</h4>
+                                    <div class="form-row">
+                                        <div>
+                                            <label>Ore per U.M.</label>
+                                            <input type="number" id="qualifiedLaborHours" step="0.01" onchange="calculatePyramid()">
+                                        </div>
+                                        <div>
+                                            <label>Costo Orario (€)</label>
+                                            <input type="number" id="qualifiedLaborCost" step="0.01" onchange="calculatePyramid()">
+                                        </div>
+                                        <div>
+                                            <label>Totale (€)</label>
+                                            <input type="number" id="qualifiedLaborTotal" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="labor-level">
+                                    <h4>Operaio Specializzato</h4>
+                                    <div class="form-row">
+                                        <div>
+                                            <label>Ore per U.M.</label>
+                                            <input type="number" id="specializedLaborHours" step="0.01" onchange="calculatePyramid()">
+                                        </div>
+                                        <div>
+                                            <label>Costo Orario (€)</label>
+                                            <input type="number" id="specializedLaborCost" step="0.01" onchange="calculatePyramid()">
+                                        </div>
+                                        <div>
+                                            <label>Totale (€)</label>
+                                            <input type="number" id="specializedLaborTotal" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div>
+                                        <label style="font-weight: 600;">Totale Manodopera</label>
+                                        <input type="number" id="totalLaborCost" readonly style="font-weight: 600;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Materiali -->
+                            <div class="form-group">
+                                <label style="font-weight: 600; color: var(--text-primary);">MATERIALI (franco cantiere + sfrido)</label>
+                                <div class="form-row">
+                                    <div>
+                                        <label>Quantità Materiale</label>
+                                        <input type="number" id="materialQuantity" step="0.01" onchange="calculatePyramid()">
+                                    </div>
+                                    <div>
+                                        <label>Prezzo Unitario (€)</label>
+                                        <input type="number" id="materialUnitPrice" step="0.01" onchange="calculatePyramid()">
+                                    </div>
+                                    <div>
+                                        <label>% Sfrido</label>
+                                        <input type="number" id="materialWaste" step="0.1" value="0" onchange="calculatePyramid()">
+                                    </div>
+                                    <div>
+                                        <label>Totale Materiali (€)</label>
+                                        <input type="number" id="totalMaterialCost" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Noli e Trasporti -->
+                            <div class="form-group">
+                                <label style="font-weight: 600; color: var(--text-primary);">NOLI E TRASPORTI</label>
+                                <div class="form-row">
+                                    <div>
+                                        <label>Noli a Caldo (€)</label>
+                                        <input type="number" id="hotRentals" step="0.01" value="0" onchange="calculatePyramid()">
+                                    </div>
+                                    <div>
+                                        <label>Noli a Freddo (€)</label>
+                                        <input type="number" id="coldRentals" step="0.01" value="0" onchange="calculatePyramid()">
+                                    </div>
+                                    <div>
+                                        <label>Trasporti (€)</label>
+                                        <input type="number" id="transports" step="0.01" value="0" onchange="calculatePyramid()">
+                                    </div>
+                                    <div>
+                                        <label>Totale Noli (€)</label>
+                                        <input type="number" id="totalRentalsCost" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Level 2: Spese Generali -->
+                        <div class="pyramid-level level-2">
+                            <div class="pyramid-level-header">
+                                <h3 class="pyramid-title">
+                                    <span class="material-icons">business</span>
+                                    2. SPESE GENERALI
+                                </h3>
+                                <div class="pyramid-total" id="generalExpensesTotal">€ 0,00</div>
+                            </div>
+                            <div class="form-row">
+                                <div>
+                                    <label>% Spese Generali</label>
+                                    <input type="number" id="generalExpensesPercent" step="0.1" value="15" onchange="calculatePyramid()">
+                                </div>
+                                <div>
+                                    <label>Importo (€)</label>
+                                    <input type="number" id="generalExpensesAmount" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Level 3: Utile d'Impresa -->
+                        <div class="pyramid-level level-3">
+                            <div class="pyramid-level-header">
+                                <h3 class="pyramid-title">
+                                    <span class="material-icons">trending_up</span>
+                                    3. UTILE D'IMPRESA
+                                </h3>
+                                <div class="pyramid-total" id="profitTotal">€ 0,00</div>
+                            </div>
+                            <div class="form-row">
+                                <div>
+                                    <label>% Utile d'Impresa</label>
+                                    <input type="number" id="profitPercent" step="0.1" value="10" onchange="calculatePyramid()">
+                                </div>
+                                <div>
+                                    <label>Importo (€)</label>
+                                    <input type="number" id="profitAmount" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coefficients Mode -->
+                        <div class="coefficients-section">
+                            <h3>Modalità di Applicazione Coefficienti</h3>
+                            <div class="coefficient-mode">
+                                <div class="mode-option active" onclick="setCoefficientMode('single')" id="singleMode">
+                                    <h4>Applicazione per Singola Voce</h4>
+                                    <p>Spese generali e utile vengono calcolati immediatamente per questa lavorazione</p>
+                                </div>
+                                <div class="mode-option" onclick="setCoefficientMode('global')" id="globalMode">
+                                    <h4>Applicazione Globale</h4>
+                                    <p>L'analisi si ferma al costo diretto. Coefficienti applicati sul computo totale</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Final Summary -->
+                        <div class="summary-box">
+                            <h4>Riepilogo Prezzo Unitario</h4>
+                            <div class="summary-grid">
+                                <div class="summary-item">
+                                    <div class="summary-label">Costo Diretto</div>
+                                    <div class="summary-value" id="summaryDirectCost">€ 0,00</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-label">Spese Generali</div>
+                                    <div class="summary-value" id="summaryGeneralExpenses">€ 0,00</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-label">Utile d'Impresa</div>
+                                    <div class="summary-value" id="summaryProfit">€ 0,00</div>
+                                </div>
+                                <div class="summary-item" style="background: var(--primary-color); color: white;">
+                                    <div class="summary-label" style="color: rgba(255,255,255,0.9);">Prezzo Unitario Finale</div>
+                                    <div class="summary-value" id="summaryFinalPrice" style="color: white;">€ 0,00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 24px; display: flex; gap: 12px;">
+                            <button class="btn btn-primary" onclick="saveAnalysis()">
+                                <span class="material-icons">save</span>
+                                Salva Analisi
+                            </button>
+                            <button class="btn btn-secondary" onclick="exportToPriceList()">
+                                <span class="material-icons">playlist_add</span>
+                                Esporta in Elenco Prezzi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Tab -->
+                <div class="tab-content" id="detailsTab">
+                    <div class="form-row">
+                        <div>
+                            <label>Codice</label>
+                            <input type="text" id="detailCode">
+                        </div>
+                        <div>
+                            <label>Tariffa</label>
+                            <input type="text" id="detailTariff">
+                        </div>
+                        <div>
+                            <label>Unità di Misura</label>
+                            <input type="text" id="detailUM">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrizione</label>
+                        <textarea id="detailDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label>Quantità</label>
+                            <input type="number" id="detailQuantity" step="0.01">
+                        </div>
+                        <div>
+                            <label>Prezzo Base (€)</label>
+                            <input type="number" id="detailBasePrice" step="0.01">
+                        </div>
+                        <div>
+                            <label>Totale Base (€)</label>
+                            <input type="number" id="detailTotalBase" readonly>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label>Prezzo Offerto (€)</label>
+                            <input type="number" id="detailOfferedPrice" step="0.01">
+                        </div>
+                        <div>
+                            <label>Totale Offerto (€)</label>
+                            <input type="number" id="detailTotalOffered" readonly>
+                        </div>
+                        <div>
+                            <label>Delta (€)</label>
+                            <input type="number" id="detailDelta" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <textarea id="detailNotes" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <!-- Charts Tab -->
+                <div class="tab-content" id="chartsTab">
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h3 class="chart-title">Composizione Costi Diretti</h3>
+                            <canvas id="costsChart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3 class="chart-title">Confronto Base vs Offerto</h3>
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3 class="chart-title">Distribuzione Percentuale</h3>
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3 class="chart-title">Andamento Delta</h3>
+                            <canvas id="deltaChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let priceData = [];
+        let currentVoiceIndex = -1;
+        let coefficientMode = 'single';
+        let charts = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.getElementById('excelImport').addEventListener('change', handleFileImport);
+            
+            // Auto-calculate totals
+            document.getElementById('detailQuantity').addEventListener('input', calculateDetailTotals);
+            document.getElementById('detailBasePrice').addEventListener('input', calculateDetailTotals);
+            document.getElementById('detailOfferedPrice').addEventListener('input', calculateDetailTotals);
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('priceData');
+            if (saved) {
+                priceData = JSON.parse(saved);
+                renderTable();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('priceData', JSON.stringify(priceData));
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('priceTableBody');
+            tbody.innerHTML = '';
+
+            let totalBase = 0;
+            let totalOffered = 0;
+            let totalDelta = 0;
+
+            priceData.forEach((voice, index) => {
+                const totalBasePrice = (voice.quantity || 0) * (voice.basePrice || 0);
+                const totalOfferedPrice = (voice.quantity || 0) * (voice.offeredPrice || 0);
+                const delta = totalOfferedPrice - totalBasePrice;
+
+                totalBase += totalBasePrice;
+                totalOffered += totalOfferedPrice;
+                totalDelta += delta;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${voice.code || ''}</td>
+                    <td>${voice.tariff || ''}</td>
+                    <td>${voice.description || ''}</td>
+                    <td>${voice.um || ''}</td>
+                    <td>${(voice.quantity || 0).toFixed(2)}</td>
+                    <td>€ ${(voice.basePrice || 0).toFixed(2)}</td>
+                    <td>€ ${totalBasePrice.toFixed(2)}</td>
+                    <td>€ ${(voice.offeredPrice || 0).toFixed(2)}</td>
+                    <td>€ ${totalOfferedPrice.toFixed(2)}</td>
+                    <td class="${delta >= 0 ? 'delta-positive' : 'delta-negative'}">
+                        € ${delta.toFixed(2)}
+                    </td>
+                    <td>${voice.notes || ''}</td>
+                    <td>
+                        <button class="action-btn action-btn-analysis" onclick="openVoiceAnalysis(${index})">
+                            <span class="material-icons" style="font-size: 16px;">analytics</span>
+                            Analisi
+                        </button>
+                        <button class="action-btn action-btn-delete" onclick="deleteVoice(${index})">
+                            <span class="material-icons" style="font-size: 16px;">delete</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Update stats
+            document.getElementById('totalItems').textContent = priceData.length;
+            document.getElementById('totalBasePrice').textContent = formatCurrency(totalBase);
+            document.getElementById('totalOfferedPrice').textContent = formatCurrency(totalOffered);
+            document.getElementById('totalDelta').textContent = formatCurrency(totalDelta);
+        }
+
+        function addNewVoice() {
+            const newVoice = {
+                code: '',
+                tariff: '',
+                description: '',
+                um: '',
+                quantity: 0,
+                basePrice: 0,
+                offeredPrice: 0,
+                notes: '',
+                analysis: null
+            };
+            priceData.push(newVoice);
+            saveData();
+            openVoiceAnalysis(priceData.length - 1);
+        }
+
+        function deleteVoice(index) {
+            if (confirm('Sei sicuro di voler eliminare questa voce?')) {
+                priceData.splice(index, 1);
+                saveData();
+            }
+        }
+
+        function openVoiceAnalysis(index) {
+            currentVoiceIndex = index;
+            const voice = priceData[index];
+            
+            document.getElementById('modalTitle').textContent = `Analisi Voce: ${voice.code || 'Nuova Voce'}`;
+            
+            // Fill details
+            document.getElementById('detailCode').value = voice.code || '';
+            document.getElementById('detailTariff').value = voice.tariff || '';
+            document.getElementById('detailDescription').value = voice.description || '';
+            document.getElementById('detailUM').value = voice.um || '';
+            document.getElementById('detailQuantity').value = voice.quantity || 0;
+            document.getElementById('detailBasePrice').value = voice.basePrice || 0;
+            document.getElementById('detailOfferedPrice').value = voice.offeredPrice || 0;
+            document.getElementById('detailNotes').value = voice.notes || '';
+            
+            calculateDetailTotals();
+            
+            // Load analysis if exists
+            if (voice.analysis) {
+                loadAnalysis(voice.analysis);
+            } else {
+                resetAnalysis();
+            }
+            
+            document.getElementById('analysisModal').classList.add('active');
+            switchTab('pyramid');
+        }
+
+        function openAnalysisModal() {
+            if (priceData.length === 0) {
+                alert('Nessuna voce presente. Aggiungi prima delle voci alla lista.');
+                return;
+            }
+            
+            currentVoiceIndex = -1;
+            document.getElementById('modalTitle').textContent = 'Analisi Generale della Gara';
+            switchTab('charts');
+            document.getElementById('analysisModal').classList.add('active');
+            renderGeneralCharts();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            // Destroy charts
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+            charts = {};
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            if (tabName === 'charts' && currentVoiceIndex === -1) {
+                renderGeneralCharts();
+            } else if (tabName === 'charts') {
+                renderVoiceCharts();
+            }
+        }
+
+        function calculateDetailTotals() {
+            const quantity = parseFloat(document.getElementById('detailQuantity').value) || 0;
+            const basePrice = parseFloat(document.getElementById('detailBasePrice').value) || 0;
+            const offeredPrice = parseFloat(document.getElementById('detailOfferedPrice').value) || 0;
+            
+            const totalBase = quantity * basePrice;
+            const totalOffered = quantity * offeredPrice;
+            const delta = totalOffered - totalBase;
+            
+            document.getElementById('detailTotalBase').value = totalBase.toFixed(2);
+            document.getElementById('detailTotalOffered').value = totalOffered.toFixed(2);
+            document.getElementById('detailDelta').value = delta.toFixed(2);
+        }
+
+        function calculatePyramid() {
+            // Labor costs
+            const commonLabor = (parseFloat(document.getElementById('commonLaborHours').value) || 0) * 
+                               (parseFloat(document.getElementById('commonLaborCost').value) || 0);
+            const qualifiedLabor = (parseFloat(document.getElementById('qualifiedLaborHours').value) || 0) * 
+                                  (parseFloat(document.getElementById('qualifiedLaborCost').value) || 0);
+            const specializedLabor = (parseFloat(document.getElementById('specializedLaborHours').value) || 0) * 
+                                    (parseFloat(document.getElementById('specializedLaborCost').value) || 0);
+            
+            document.getElementById('commonLaborTotal').value = commonLabor.toFixed(2);
+            document.getElementById('qualifiedLaborTotal').value = qualifiedLabor.toFixed(2);
+            document.getElementById('specializedLaborTotal').value = specializedLabor.toFixed(2);
+            
+            const totalLabor = commonLabor + qualifiedLabor + specializedLabor;
+            document.getElementById('totalLaborCost').value = totalLabor.toFixed(2);
+            
+            // Material costs
+            const materialQty = parseFloat(document.getElementById('materialQuantity').value) || 0;
+            const materialPrice = parseFloat(document.getElementById('materialUnitPrice').value) || 0;
+            const wastePercent = parseFloat(document.getElementById('materialWaste').value) || 0;
+            const totalMaterial = materialQty * materialPrice * (1 + wastePercent / 100);
+            document.getElementById('totalMaterialCost').value = totalMaterial.toFixed(2);
+            
+            // Rentals costs
+            const hotRentals = parseFloat(document.getElementById('hotRentals').value) || 0;
+            const coldRentals = parseFloat(document.getElementById('coldRentals').value) || 0;
+            const transports = parseFloat(document.getElementById('transports').value) || 0;
+            const totalRentals = hotRentals + coldRentals + transports;
+            document.getElementById('totalRentalsCost').value = totalRentals.toFixed(2);
+            
+            // Direct costs total
+            const directCosts = totalLabor + totalMaterial + totalRentals;
+            document.getElementById('directCostsTotal').textContent = formatCurrency(directCosts);
+            
+            // General expenses
+            const genExpPercent = parseFloat(document.getElementById('generalExpensesPercent').value) || 0;
+            const genExpAmount = coefficientMode === 'single' ? directCosts * (genExpPercent / 100) : 0;
+            document.getElementById('generalExpensesPercent').disabled = coefficientMode === 'global';
+            document.getElementById('generalExpensesAmount').value = genExpAmount.toFixed(2);
+            document.getElementById('generalExpensesTotal').textContent = formatCurrency(genExpAmount);
+            
+            // Profit
+            const profitPercent = parseFloat(document.getElementById('profitPercent').value) || 0;
+            const profitAmount = coefficientMode === 'single' ? (directCosts + genExpAmount) * (profitPercent / 100) : 0;
+            document.getElementById('profitPercent').disabled = coefficientMode === 'global';
+            document.getElementById('profitAmount').value = profitAmount.toFixed(2);
+            document.getElementById('profitTotal').textContent = formatCurrency(profitAmount);
+            
+            // Final summary
+            const finalPrice = coefficientMode === 'single' ? directCosts + genExpAmount + profitAmount : directCosts;
+            
+            document.getElementById('summaryDirectCost').textContent = formatCurrency(directCosts);
+            document.getElementById('summaryGeneralExpenses').textContent = formatCurrency(genExpAmount);
+            document.getElementById('summaryProfit').textContent = formatCurrency(profitAmount);
+            document.getElementById('summaryFinalPrice').textContent = formatCurrency(finalPrice);
+        }
+
+        function setCoefficientMode(mode) {
+            coefficientMode = mode;
+            document.getElementById('singleMode').classList.toggle('active', mode === 'single');
+            document.getElementById('globalMode').classList.toggle('active', mode === 'global');
+            calculatePyramid();
+        }
+
+        function saveAnalysis() {
+            if (currentVoiceIndex === -1) {
+                alert('Modalità analisi generale - impossibile salvare');
+                return;
+            }
+            
+            const analysis = {
+                labor: {
+                    common: {
+                        hours: parseFloat(document.getElementById('commonLaborHours').value) || 0,
+                        cost: parseFloat(document.getElementById('commonLaborCost').value) || 0
+                    },
+                    qualified: {
+                        hours: parseFloat(document.getElementById('qualifiedLaborHours').value) || 0,
+                        cost: parseFloat(document.getElementById('qualifiedLaborCost').value) || 0
+                    },
+                    specialized: {
+                        hours: parseFloat(document.getElementById('specializedLaborHours').value) || 0,
+                        cost: parseFloat(document.getElementById('specializedLaborCost').value) || 0
+                    }
+                },
+                materials: {
+                    quantity: parseFloat(document.getElementById('materialQuantity').value) || 0,
+                    unitPrice: parseFloat(document.getElementById('materialUnitPrice').value) || 0,
+                    waste: parseFloat(document.getElementById('materialWaste').value) || 0
+                },
+                rentals: {
+                    hot: parseFloat(document.getElementById('hotRentals').value) || 0,
+                    cold: parseFloat(document.getElementById('coldRentals').value) || 0,
+                    transports: parseFloat(document.getElementById('transports').value) || 0
+                },
+                coefficients: {
+                    generalExpenses: parseFloat(document.getElementById('generalExpensesPercent').value) || 0,
+                    profit: parseFloat(document.getElementById('profitPercent').value) || 0,
+                    mode: coefficientMode
+                },
+                finalPrice: parseFloat(document.getElementById('summaryFinalPrice').textContent.replace('€ ', '').replace('.', '').replace(',', '.')) || 0
+            };
+            
+            priceData[currentVoiceIndex].analysis = analysis;
+            priceData[currentVoiceIndex].basePrice = analysis.finalPrice;
+            
+            // Update details
+            priceData[currentVoiceIndex].code = document.getElementById('detailCode').value;
+            priceData[currentVoiceIndex].tariff = document.getElementById('detailTariff').value;
+            priceData[currentVoiceIndex].description = document.getElementById('detailDescription').value;
+            priceData[currentVoiceIndex].um = document.getElementById('detailUM').value;
+            priceData[currentVoiceIndex].quantity = parseFloat(document.getElementById('detailQuantity').value) || 0;
+            priceData[currentVoiceIndex].notes = document.getElementById('detailNotes').value;
+            
+            saveData();
+            alert('Analisi salvata con successo!');
+        }
+
+        function exportToPriceList() {
+            if (currentVoiceIndex === -1) {
+                alert('Modalità analisi generale');
+                return;
+            }
+            
+            const finalPrice = parseFloat(document.getElementById('summaryFinalPrice').textContent.replace('€ ', '').replace('.', '').replace(',', '.')) || 0;
+            priceData[currentVoiceIndex].basePrice = finalPrice;
+            saveData();
+            alert('Prezzo esportato nell\'elenco prezzi!');
+        }
+
+        function loadAnalysis(analysis) {
+            // Labor
+            document.getElementById('commonLaborHours').value = analysis.labor.common.hours || 0;
+            document.getElementById('commonLaborCost').value = analysis.labor.common.cost || 0;
+            document.getElementById('qualifiedLaborHours').value = analysis.labor.qualified.hours || 0;
+            document.getElementById('qualifiedLaborCost').value = analysis.labor.qualified.cost || 0;
+            document.getElementById('specializedLaborHours').value = analysis.labor.specialized.hours || 0;
+            document.getElementById('specializedLaborCost').value = analysis.labor.specialized.cost || 0;
+            
+            // Materials
+            document.getElementById('materialQuantity').value = analysis.materials.quantity || 0;
+            document.getElementById('materialUnitPrice').value = analysis.materials.unitPrice || 0;
+            document.getElementById('materialWaste').value = analysis.materials.waste || 0;
+            
+            // Rentals
+            document.getElementById('hotRentals').value = analysis.rentals.hot || 0;
+            document.getElementById('coldRentals').value = analysis.rentals.cold || 0;
+            document.getElementById('transports').value = analysis.rentals.transports || 0;
+            
+            // Coefficients
+            document.getElementById('generalExpensesPercent').value = analysis.coefficients.generalExpenses || 15;
+            document.getElementById('profitPercent').value = analysis.coefficients.profit || 10;
+            
+            setCoefficientMode(analysis.coefficients.mode || 'single');
+            calculatePyramid();
+        }
+
+        function resetAnalysis() {
+            document.querySelectorAll('#pyramidTab input').forEach(input => {
+                if (!input.readOnly) {
+                    input.value = input.defaultValue || 0;
+                }
+            });
+            setCoefficientMode('single');
+            calculatePyramid();
+        }
+
+        function renderVoiceCharts() {
+            if (currentVoiceIndex === -1 || !priceData[currentVoiceIndex].analysis) {
+                return;
+            }
+            
+            const analysis = priceData[currentVoiceIndex].analysis;
+            
+            // Costs Chart
+            const costsCtx = document.getElementById('costsChart').getContext('2d');
+            if (charts.costs) charts.costs.destroy();
+            charts.costs = new Chart(costsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Manodopera', 'Materiali', 'Noli'],
+                    datasets: [{
+                        label: 'Costi Diretti (€)',
+                        data: [
+                            (analysis.labor.common.hours * analysis.labor.common.cost) +
+                            (analysis.labor.qualified.hours * analysis.labor.qualified.cost) +
+                            (analysis.labor.specialized.hours * analysis.labor.specialized.cost),
+                            analysis.materials.quantity * analysis.materials.unitPrice * (1 + analysis.materials.waste / 100),
+                            analysis.rentals.hot + analysis.rentals.cold + analysis.rentals.transports
+                        ],
+                        backgroundColor: ['#1a73e8', '#188038', '#f29900']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            
+            // Comparison Chart
+            const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+            if (charts.comparison) charts.comparison.destroy();
+            charts.comparison = new Chart(comparisonCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Prezzo Base', 'Prezzo Offerto'],
+                    datasets: [{
+                        label: 'Confronto Prezzi (€)',
+                        data: [
+                            priceData[currentVoiceIndex].basePrice || 0,
+                            priceData[currentVoiceIndex].offeredPrice || 0
+                        ],
+                        backgroundColor: ['#1a73e8', '#188038']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            
+            // Distribution Chart
+            const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+            if (charts.distribution) charts.distribution.destroy();
+            charts.distribution = new Chart(distributionCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Costo Diretto', 'Spese Generali', 'Utile'],
+                    datasets: [{
+                        data: [
+                            analysis.finalPrice / (1 + (analysis.coefficients.generalExpenses + analysis.coefficients.profit) / 100),
+                            analysis.finalPrice * (analysis.coefficients.generalExpenses / 100),
+                            analysis.finalPrice * (analysis.coefficients.profit / 100)
+                        ],
+                        backgroundColor: ['#1a73e8', '#f29900', '#188038']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            
+            // Delta Chart
+            const deltaCtx = document.getElementById('deltaChart').getContext('2d');
+            if (charts.delta) charts.delta.destroy();
+            charts.delta = new Chart(deltaCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Base', 'Offerto', 'Delta'],
+                    datasets: [{
+                        label: 'Andamento (€)',
+                        data: [
+                            priceData[currentVoiceIndex].basePrice || 0,
+                            priceData[currentVoiceIndex].offeredPrice || 0,
+                            (priceData[currentVoiceIndex].offeredPrice || 0) - (priceData[currentVoiceIndex].basePrice || 0)
+                        ],
+                        borderColor: '#1a73e8',
+                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function renderGeneralCharts() {
+            if (priceData.length === 0) return;
+            
+            // Aggregate data for general charts
+            const totalBase = priceData.reduce((sum, v) => sum + (v.quantity || 0) * (v.basePrice || 0), 0);
+            const totalOffered = priceData.reduce((sum, v) => sum + (v.quantity || 0) * (v.offeredPrice || 0), 0);
+            
+            // Comparison Chart
+            const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+            if (charts.comparison) charts.comparison.destroy();
+            charts.comparison = new Chart(comparisonCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Totale Base', 'Totale Offerto', 'Delta'],
+                    datasets: [{
+                        label: 'Confronto Generale (€)',
+                        data: [totalBase, totalOffered, totalOffered - totalBase],
+                        backgroundColor: ['#1a73e8', '#188038', totalOffered >= totalBase ? '#188038' : '#d93025']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            
+            // Distribution by voice
+            const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+            if (charts.distribution) charts.distribution.destroy();
+            
+            const labels = priceData.slice(0, 10).map(v => v.code || 'Voce ' + (priceData.indexOf(v) + 1));
+            const data = priceData.slice(0, 10).map(v => (v.quantity || 0) * (v.offeredPrice || 0));
+            
+            charts.distribution = new Chart(distributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#1a73e8', '#188038', '#f29900', '#d93025', '#5f6368',
+                            '#4285f4', '#34a853', '#fbbc05', '#ea4335', '#9aa0a6'
+                        ]
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                    jsonData.forEach(row => {
+                        priceData.push({
+                            code: row.Codice || row.code || '',
+                            tariff: row.Tariffa || row.tariffa || '',
+                            description: row.Descrizione || row.descrizione || '',
+                            um: row.UM || row.um || row['Unità di Misura'] || '',
+                            quantity: row.Quantità || row.quantita || row.Quantity || 0,
+                            basePrice: row['Prezzo Unitario'] || row.prezzo_unitario || row.BasePrice || 0,
+                            offeredPrice: row['Prezzo Offerto'] || row.prezzo_offerto || row.OfferedPrice || 0,
+                            notes: row.Note || row.note || ''
+                        });
+                    });
+
+                    saveData();
+                    alert('Importazione completata con successo!');
+                } catch (error) {
+                    alert('Errore durante l\'importazione: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        function exportToExcel() {
+            if (priceData.length === 0) {
+                alert('Nessun dato da esportare');
+                return;
+            }
+
+            const exportData = priceData.map(voice => ({
+                Codice: voice.code,
+                Tariffa: voice.tariff,
+                Descrizione: voice.description,
+                UM: voice.um,
+                Quantità: voice.quantity,
+                'Prezzo Unitario Base': voice.basePrice,
+                'Totale Base': (voice.quantity || 0) * (voice.basePrice || 0),
+                'Prezzo Unitario Offerto': voice.offeredPrice,
+                'Totale Offerto': (voice.quantity || 0) * (voice.offeredPrice || 0),
+                Delta: ((voice.quantity || 0) * (voice.offeredPrice || 0)) - ((voice.quantity || 0) * (voice.basePrice || 0)),
+                Note: voice.notes
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Elenco Prezzi');
+            XLSX.writeFile(wb, 'Elenco_Prezzi_Gara.xlsx');
+        }
+
+        function formatCurrency(amount) {
+            return '€ ' + amount.toLocaleString('it-IT', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+    </script>
+</body>
+</html>
